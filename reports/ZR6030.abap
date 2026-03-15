@@ -14,6 +14,8 @@ TABLES: z6030aula_curso.
 SELECTION-SCREEN BEGIN OF BLOCK b11 WITH FRAME TITLE TEXT-001." Parâmetro de entrada
 * Parâmetro
   SELECT-OPTIONS: so_curso FOR z6030aula_curso-nome_curso NO INTERVALS.
+  PARAMETERS: p_basic TYPE char1 RADIOBUTTON GROUP gr1,
+              p_compl TYPE char1 RADIOBUTTON GROUP gr1 DEFAULT 'X'.
 SELECTION-SCREEN END OF BLOCK b11.
 
 * Tabelas internas
@@ -45,7 +47,23 @@ FORM f_obtem_dados.
     INTO TABLE lt_zt6030_alun[]
     WHERE nome_curso IN so_curso.
 
+  IF p_basic EQ 'X'.
+    PERFORM f_visualizar_dados_alv_basico.
+  ELSE.
+    PERFORM f_visualizar_dados_alv_compl.
+  ENDIF.
+
   PERFORM f_visualizar_dados_alv_basico.
+
+ENDFORM.
+
+FORM f_visualizar_dados_alv_compl.
+
+  IF lt_zt6030_curso[] IS NOT INITIAL OR lt_zt6030_alun[] IS NOT INITIAL.
+    CALL SCREEN 100.
+  ELSE.
+    MESSAGE 'Dados não localizados!' TYPE 'S' DISPLAY LIKE 'W'.
+  ENDIF.
 
 ENDFORM.
 
