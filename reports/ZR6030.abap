@@ -39,21 +39,19 @@ FORM f_obtem_dados.
   SELECT *
     FROM z6030aula_curso
     INTO TABLE lt_zt6030_curso[]
-    WHERE nome_curso IN so_curso.
+    WHERE nome_curso IN so_curso[].
 
 
   SELECT *
     FROM z6030aula_alun
     INTO TABLE lt_zt6030_alun[]
-    WHERE nome_curso IN so_curso.
+    WHERE nome_curso IN so_curso[].
 
   IF p_basic EQ 'X'.
     PERFORM f_visualizar_dados_alv_basico.
   ELSE.
     PERFORM f_visualizar_dados_alv_compl.
   ENDIF.
-
-  PERFORM f_visualizar_dados_alv_basico.
 
 ENDFORM.
 
@@ -122,3 +120,58 @@ MODULE status_0100 OUTPUT.
   SET PF-STATUS 'STATUS100'. " Status 100
   SET TITLEBAR 'TITLE100'. " Exemplo ALV completo
 ENDMODULE.
+
+
+*&---------------------------------------------------------------------*
+*& Module M_SHOW_GRID_100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE m_show_grid_100 OUTPUT.
+
+  FREE: lt_fieldcat[].
+
+  ls_layout-cwidth_opt = 'X'.
+  ls_layout-zebra      = 'X'.
+  ls_variant-report    = sy-repid.
+
+  PERFORM f_build_fieldcat USING:
+        'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ''  CHANGING lt_fieldcat[],
+        'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ''  CHANGING lt_fieldcat[],
+        'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ''  CHANGING lt_fieldcat[],
+        'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X' CHANGING lt_fieldcat[].
+
+  IF lo_grid_100 IS INITIAL.
+    lo_grid_100 = NEW cl_gui_alv_grid( i_parent = cl_gui_custom_container=>default_screen ).
+
+    lo_grid_100->set_table_for_first_display(
+    EXPORTING
+      is_variant = ls_variant
+      is_layout = ls_layout
+      i_save = 'A'
+    CHANGING
+      it_fieldcatalog = lt_fieldcat[]
+      it_outtab = lt_zt6030_curso[]
+   ).
+  ELSE.
+    lo_grid_100->refresh_table_display( ).
+  ENDIF.
+
+ENDMODULE.
+
+FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
+                            VALUE(p_field)     TYPE c
+                            VALUE(p_table)     TYPE c
+                            VALUE(p_coltext)   TYPE c
+                            VALUE(p_checkbox)  TYPE c
+                         CHANGING t_fieldcat   TYPE lvc_t_fcat.
+
+  DATA: ls_fieldcat LIKE LINE OF t_fieldcat[].
+  ls_fieldcat-fieldname = p_fieldname.
+  ls_fieldcat-ref_field = p_field.
+  ls_fieldcat-ref_table = p_table.
+  ls_fieldcat-coltext   = p_coltext.
+  ls_fieldcat-checkbox  = p_checkbox.
+  APPEND ls_fieldcat TO t_fieldcat[].
+
+ENDFORM.
