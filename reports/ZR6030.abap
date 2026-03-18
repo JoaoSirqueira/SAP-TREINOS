@@ -153,6 +153,8 @@ MODULE m_show_grid_100 OUTPUT.
       it_fieldcatalog = lt_fieldcat[]
       it_outtab = lt_zt6030_curso[]
    ).
+
+    lo_grid_100a->set_gridtitle( 'Lista de Cursos'). " Adiciona um título em cima da tabela
   ELSE.
     lo_grid_100->refresh_table_display( ).
   ENDIF.
