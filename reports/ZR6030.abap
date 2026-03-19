@@ -19,16 +19,19 @@ SELECTION-SCREEN BEGIN OF BLOCK b11 WITH FRAME TITLE TEXT-001." Parâmetro de en
 SELECTION-SCREEN END OF BLOCK b11.
 
 * Tabelas internas
-DATA: lt_zt6030_curso  TYPE TABLE OF z6030aula_curso,
-      lt_zt6030_alun   TYPE TABLE OF z6030aula_alun,
+DATA: lt_zt6030_curso   TYPE TABLE OF z6030aula_curso,
+      lt_zt6030_alun    TYPE TABLE OF z6030aula_alun,
 
 * Declaração de variáveis
-      lo_grid_100      TYPE REF TO cl_gui_alv_grid,
-      lo_container_100 TYPE REF TO cl_gui_alv_grid,
-      lv_okcode_100    TYPE sy-ucomm,
-      lt_fieldcat      TYPE lvc_t_fcat,
-      ls_layout        TYPE lvc_s_layo,
-      ls_variant       TYPE disvariant.
+      lo_grid_100a      TYPE REF TO cl_gui_alv_grid,
+      lo_grid_100b      TYPE REF TO cl_gui_alv_grid,
+      lo_container_100a TYPE REF TO cl_gui_custom_container,
+      lo_container_100b TYPE REF TO cl_gui_custom_container,
+      lv_okcode_100     TYPE sy-ucomm,
+      lt_fieldcata      TYPE lvc_t_fcat,
+      lt_fieldcatb      TYPE lvc_t_fcat,
+      ls_layout         TYPE lvc_s_layo,
+      ls_variant        TYPE disvariant.
 
 START-OF-SELECTION.
   PERFORM f_obtem_dados.
@@ -67,15 +70,15 @@ ENDFORM.
 
 FORM f_visualizar_dados_alv_basico.
 
-  DATA: lt_fieldcat_basico TYPE slis_t_fieldcat_alv,
-        ls_layout_basico   TYPE slis_layout_alv.
+  DATA: lt_fieldcata_basico TYPE slis_t_fieldcat_alv,
+        ls_layout_basico    TYPE slis_layout_alv.
 
-* Cria o lt_fieldcat[] com base em uma estrutura de dados criada na SE11
+* Cria o lt_fieldcata[] com base em uma estrutura de dados criada na SE11
   CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
     EXPORTING
       i_structure_name = 'z6030aula_curso'
     CHANGING
-      ct_fieldcat      = lt_fieldcat_basico[].
+      ct_fieldcat      = lt_fieldcata_basico[].
 
   ls_layout_basico-colwidth_optimize = 'X'.
   ls_layout_basico-zebra             = 'X'.
@@ -83,7 +86,7 @@ FORM f_visualizar_dados_alv_basico.
   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
     EXPORTING
       is_layout     = ls_layout_basico
-      it_fieldcat   = lt_fieldcat_basico[]
+      it_fieldcat   = lt_fieldcata_basico[]
     TABLES
       t_outtab      = lt_zt6030_curso[]
     EXCEPTIONS
@@ -129,37 +132,76 @@ ENDMODULE.
 *&---------------------------------------------------------------------*
 MODULE m_show_grid_100 OUTPUT.
 
-  FREE: lt_fieldcat[].
+  FREE: lt_fieldcata[].
 
   ls_layout-cwidth_opt = 'X'.
   ls_layout-zebra      = 'X'.
   ls_variant-report    = sy-repid.
 
+  PERFORM f_build_grid_a.
+  PERFORM f_build_grid_b.
+
+ENDMODULE.
+
+FORM f_build_grid_a.
+
   PERFORM f_build_fieldcat USING:
-        'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ''  CHANGING lt_fieldcat[],
-        'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ''  CHANGING lt_fieldcat[],
-        'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ''  CHANGING lt_fieldcat[],
-        'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X' CHANGING lt_fieldcat[].
+      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ''  CHANGING lt_fieldcata[],
+      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ''  CHANGING lt_fieldcata[],
+      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ''  CHANGING lt_fieldcata[],
+      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X' CHANGING lt_fieldcata[].
 
-  IF lo_grid_100 IS INITIAL.
-    lo_grid_100 = NEW cl_gui_alv_grid( i_parent = cl_gui_custom_container=>default_screen ).
+  IF lo_grid_100a IS INITIAL.
 
-    lo_grid_100->set_table_for_first_display(
+    lo_container_100a = NEW cl_gui_custom_container( container_name = 'CONTAINERA' ).
+    lo_grid_100a      = NEW cl_gui_alv_grid( i_parent = lo_container_100a ).
+
+    lo_grid_100a->set_table_for_first_display(
     EXPORTING
       is_variant = ls_variant
       is_layout = ls_layout
       i_save = 'A'
     CHANGING
-      it_fieldcatalog = lt_fieldcat[]
+      it_fieldcatalog = lt_fieldcata[]
       it_outtab = lt_zt6030_curso[]
    ).
-
     lo_grid_100a->set_gridtitle( 'Lista de Cursos'). " Adiciona um título em cima da tabela
   ELSE.
-    lo_grid_100->refresh_table_display( ).
+    lo_grid_100a->refresh_table_display( ).
   ENDIF.
 
-ENDMODULE.
+
+ENDFORM.
+
+FORM f_build_grid_b.
+
+  PERFORM f_build_fieldcat USING:
+      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  CHANGING lt_fieldcatb[],
+      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  CHANGING lt_fieldcatb[],
+      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  CHANGING lt_fieldcatb[],
+      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  CHANGING lt_fieldcatb[],
+      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  CHANGING lt_fieldcatb[].
+
+  IF lo_grid_100b IS INITIAL.
+
+    lo_container_100b = NEW cl_gui_custom_container( container_name = 'CONTAINERB' ).
+    lo_grid_100b      = NEW cl_gui_alv_grid( i_parent = lo_container_100b ).
+
+    lo_grid_100b->set_table_for_first_display(
+    EXPORTING
+      is_variant = ls_variant
+      is_layout = ls_layout
+      i_save = 'A'
+    CHANGING
+      it_fieldcatalog = lt_fieldcatb[]
+      it_outtab = lt_zt6030_alun[]
+   ).
+    lo_grid_100b->set_gridtitle( 'Lista de alunos'). " Adiciona um título em cima da tabela
+  ELSE.
+    lo_grid_100b->refresh_table_display( ).
+  ENDIF.
+
+ENDFORM.
 
 FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
                             VALUE(p_field)     TYPE c
