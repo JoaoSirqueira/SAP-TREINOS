@@ -156,6 +156,9 @@ FORM f_build_grid_a.
     lo_container_100a = NEW cl_gui_custom_container( container_name = 'CONTAINERA' ).
     lo_grid_100a      = NEW cl_gui_alv_grid( i_parent = lo_container_100a ).
 
+    " Permite seleção múltipla de linhas
+    lo_grid_100a->set_ready_for_input( 1 ).
+
     lo_grid_100a->set_table_for_first_display(
     EXPORTING
       is_variant = ls_variant
@@ -186,6 +189,9 @@ FORM f_build_grid_b.
 
     lo_container_100b = NEW cl_gui_custom_container( container_name = 'CONTAINERB' ).
     lo_grid_100b      = NEW cl_gui_alv_grid( i_parent = lo_container_100b ).
+
+    " Permite seleção múltipla de linhas
+    lo_grid_100b->set_ready_for_input( 1 ).
 
     lo_grid_100b->set_table_for_first_display(
     EXPORTING
