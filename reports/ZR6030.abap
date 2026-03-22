@@ -5,10 +5,19 @@
 *&---------------------------------------------------------------------*
 REPORT zr6030.
 
+INCLUDE <icon>.
+
 TYPE-POOLS: slis. " É tipodiretório com estruturas salvas.
 
 * Declarando tabela para o select-options
 TABLES: z6030aula_curso.
+
+* Tipos
+TYPES:
+  BEGIN OF ly_alun.
+    INCLUDE TYPE z6030aula_alun.
+TYPES: id TYPE icon-id,
+  END OF ly_alun.
 
 " Selection-Screen: contorno na variável de entrada
 SELECTION-SCREEN BEGIN OF BLOCK b11 WITH FRAME TITLE TEXT-001." Parâmetro de entrada
@@ -20,7 +29,7 @@ SELECTION-SCREEN END OF BLOCK b11.
 
 * Tabelas internas
 DATA: lt_zt6030_curso   TYPE TABLE OF z6030aula_curso,
-      lt_zt6030_alun    TYPE TABLE OF z6030aula_alun,
+      lt_zt6030_alun    TYPE TABLE OF ly_alun,
 
 * Declaração de variáveis
       lo_grid_100a      TYPE REF TO cl_gui_alv_grid,
@@ -50,6 +59,17 @@ FORM f_obtem_dados.
     FROM z6030aula_alun
     INTO TABLE lt_zt6030_alun[]
     WHERE nome_curso IN so_curso[].
+
+  " Percorre para adicionar os ícones
+  LOOP AT lt_zt6030_alun[] ASSIGNING FIELD-SYMBOL(<fs_alun>).
+    IF <fs_alun>-inscr_confirmada EQ 'X' AND <fs_alun>-pgto_confirmado EQ 'X'. " Se a confirmação estiver OK e o Pagamento estiver confirmado coloque ícone verde
+      <fs_alun>-id = icon_green_light.
+    ELSEIF <fs_alun>-inscr_confirmada EQ 'X' AND <fs_alun>-pgto_confirmado IS INITIAL. " Se a confirmação for OK e o pagamento não coloque ícone amarelo
+      <fs_alun>-id = icon_yellow_light.
+    ELSE.
+      <fs_alun>-id = icon_red_light.
+    ENDIF.
+  ENDLOOP.
 
   IF p_basic EQ 'X'.
     PERFORM f_visualizar_dados_alv_basico.
@@ -148,10 +168,10 @@ ENDMODULE.
 FORM f_build_grid_a.
 
   PERFORM f_build_fieldcat USING:
-      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ''  CHANGING lt_fieldcata[],
-      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ''  CHANGING lt_fieldcata[],
-      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ''  CHANGING lt_fieldcata[],
-      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X' CHANGING lt_fieldcata[].
+      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ' '  ' ' CHANGING lt_fieldcata[],
+      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ' '  ' ' CHANGING lt_fieldcata[],
+      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ' '  ' ' CHANGING lt_fieldcata[],
+      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X'  ' ' CHANGING lt_fieldcata[].
 
   IF lo_grid_100a IS INITIAL.
 
@@ -182,11 +202,12 @@ ENDFORM.
 FORM f_build_grid_b.
 
   PERFORM f_build_fieldcat USING:
-      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  CHANGING lt_fieldcatb[],
-      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  CHANGING lt_fieldcatb[],
-      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  CHANGING lt_fieldcatb[],
-      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  CHANGING lt_fieldcatb[],
-      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  CHANGING lt_fieldcatb[].
+      'ID'                'ID'                'ICON'            'Status'            ' '  'X' CHANGING lt_fieldcatb[],
+      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  ' ' CHANGING lt_fieldcatb[],
+      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  ' ' CHANGING lt_fieldcatb[],
+      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  ' ' CHANGING lt_fieldcatb[],
+      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  ' ' CHANGING lt_fieldcatb[],
+      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  ' ' CHANGING lt_fieldcatb[].
 
   IF lo_grid_100b IS INITIAL.
 
@@ -283,6 +304,7 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
                             VALUE(p_table)     TYPE c
                             VALUE(p_coltext)   TYPE c
                             VALUE(p_checkbox)  TYPE c
+                            VALUE(p_icon)      TYPE c
                          CHANGING t_fieldcat   TYPE lvc_t_fcat.
 
   DATA: ls_fieldcat LIKE LINE OF t_fieldcat[].
@@ -291,6 +313,7 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
   ls_fieldcat-ref_table = p_table.
   ls_fieldcat-coltext   = p_coltext.
   ls_fieldcat-checkbox  = p_checkbox.
+  ls_fieldcat-icon  = p_icon.
   APPEND ls_fieldcat TO t_fieldcat[].
 
 ENDFORM.
