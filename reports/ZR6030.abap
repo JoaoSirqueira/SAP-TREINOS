@@ -30,6 +30,7 @@ DATA: lt_zt6030_curso   TYPE TABLE OF z6030aula_curso,
       lv_okcode_100     TYPE sy-ucomm,
       lt_fieldcata      TYPE lvc_t_fcat,
       lt_fieldcatb      TYPE lvc_t_fcat,
+      lt_tool_bar       TYPE ui_functions,
       ls_layout         TYPE lvc_s_layo,
       ls_variant        TYPE disvariant.
 
@@ -138,6 +139,7 @@ MODULE m_show_grid_100 OUTPUT.
   ls_layout-zebra      = 'X'.
   ls_variant-report    = sy-repid.
 
+  PERFORM f_remove_alv_buttons.
   PERFORM f_build_grid_a.
   PERFORM f_build_grid_b.
 
@@ -161,12 +163,13 @@ FORM f_build_grid_a.
 
     lo_grid_100a->set_table_for_first_display(
     EXPORTING
-      is_variant = ls_variant
-      is_layout = ls_layout
-      i_save = 'A'
+      it_toolbar_excluding = lt_tool_bar[]
+      is_variant           = ls_variant
+      is_layout            = ls_layout
+      i_save               = 'A'
     CHANGING
-      it_fieldcatalog = lt_fieldcata[]
-      it_outtab = lt_zt6030_curso[]
+      it_fieldcatalog      = lt_fieldcata[]
+      it_outtab            = lt_zt6030_curso[]
    ).
     lo_grid_100a->set_gridtitle( 'Lista de Cursos'). " Adiciona um título em cima da tabela
   ELSE.
@@ -195,17 +198,83 @@ FORM f_build_grid_b.
 
     lo_grid_100b->set_table_for_first_display(
     EXPORTING
-      is_variant = ls_variant
-      is_layout = ls_layout
-      i_save = 'A'
+      it_toolbar_excluding = lt_tool_bar[]
+      is_variant           = ls_variant
+      is_layout            = ls_layout
+      i_save               = 'A'
     CHANGING
-      it_fieldcatalog = lt_fieldcatb[]
-      it_outtab = lt_zt6030_alun[]
+      it_fieldcatalog      = lt_fieldcatb[]
+      it_outtab            = lt_zt6030_alun[]
    ).
     lo_grid_100b->set_gridtitle( 'Lista de alunos'). " Adiciona um título em cima da tabela
   ELSE.
     lo_grid_100b->refresh_table_display( ).
   ENDIF.
+
+ENDFORM.
+
+FORM f_remove_alv_buttons.
+
+  " Remove botões indesejados do Grid.
+* APPEND cl_gui_alv_grid=>mc_fc_excl_all                TO lt_tool_bar[]. " <- Comando remove todos os botões
+  APPEND cl_gui_alv_grid=>mc_evt_delayed_change_select  TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_evt_delayed_move_curr_cell TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_evt_enter                  TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_evt_modified               TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_auf                     TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_average                 TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_back_classic            TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_abc                TO lt_tool_bar[].
+* APPEND cl_gui_alv_grid->mc_fc_call_chain              TO lt_tool_bar[].
+* APPEND cl_guilalv_grid=>mc_fc_call_crbatch            TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_crweb              TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_lineitems          TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_master_data        TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_more               TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_report             TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_xint               TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_call_xxl                TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_check                   TO lt_tool_bar[].
+* APPEND cl_gui_alv_grid->mc_fc_col_invisible           TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_col_optimize            TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_count                   TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_current_variant         TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_data_save               TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_delete_filter           TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_deselect_all            TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_detail                  TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_expcrdata               TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_expcrdesig              TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_expcrtempl              TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_expmdb                  TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_extend                  TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_f4                      TO lt_tool_bar[].
+* APPEND cl_gui_alv_grid=>mc_fc_filter                  TO lt_tool_bar[].
+* APPEND cl_gui_alv_grid=>mc_fc_find                    TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_fix_columns             TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_graph                   TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_help                    TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_info                    TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_load_variant            TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_append_row          TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_copy                TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_copy_row            TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_cut                 TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_delete_row          TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_insert_row          TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_move_row            TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_paste               TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_paste_new_row       TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_loc_undo                TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_maintain_variant        TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_maximum                 TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_minimum                 TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_pc_file                 TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_print                   TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_print_back              TO lt_tool_bar[].
+  APPEND cl_gui_alv_grid=>mc_fc_print_prev              TO lt_tool_bar[].
+* APPEND cl_gui_alv_grid->mc_fc_refresh                 TO lt_tool_bar[].
+
 
 ENDFORM.
 
