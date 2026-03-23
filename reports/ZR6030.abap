@@ -16,7 +16,8 @@ TABLES: z6030aula_curso.
 TYPES:
   BEGIN OF ly_alun.
     INCLUDE TYPE z6030aula_alun.
-TYPES: id TYPE icon-id,
+TYPES: id    TYPE icon-id,
+    color TYPE char4,
   END OF ly_alun.
 
 " Selection-Screen: contorno na variável de entrada
@@ -63,11 +64,14 @@ FORM f_obtem_dados.
   " Percorre para adicionar os ícones
   LOOP AT lt_zt6030_alun[] ASSIGNING FIELD-SYMBOL(<fs_alun>).
     IF <fs_alun>-inscr_confirmada EQ 'X' AND <fs_alun>-pgto_confirmado EQ 'X'. " Se a confirmação estiver OK e o Pagamento estiver confirmado coloque ícone verde
-      <fs_alun>-id = icon_green_light.
+      <fs_alun>-id    = icon_green_light.
+      <fs_alun>-color = 'C500'.
     ELSEIF <fs_alun>-inscr_confirmada EQ 'X' AND <fs_alun>-pgto_confirmado IS INITIAL. " Se a confirmação for OK e o pagamento não coloque ícone amarelo
-      <fs_alun>-id = icon_yellow_light.
+      <fs_alun>-id    = icon_yellow_light.
+      <fs_alun>-color = 'C300'.
     ELSE.
-      <fs_alun>-id = icon_red_light.
+      <fs_alun>-id    = icon_red_light.
+      <fs_alun>-color = 'C600'.
     ENDIF.
   ENDLOOP.
 
@@ -157,6 +161,7 @@ MODULE m_show_grid_100 OUTPUT.
 
   ls_layout-cwidth_opt = 'X'.
   ls_layout-zebra      = 'X'.
+  ls_layout-info_fname = 'COLOR'.
   ls_variant-report    = sy-repid.
 
   PERFORM f_remove_alv_buttons.
