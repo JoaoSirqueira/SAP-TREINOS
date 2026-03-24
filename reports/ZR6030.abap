@@ -162,6 +162,7 @@ MODULE m_show_grid_100 OUTPUT.
   ls_layout-cwidth_opt = 'X'.
   ls_layout-zebra      = 'X'.
   ls_layout-info_fname = 'COLOR'.
+*  ls_layout-ctab_fname = 'COLOR_CELL'. " Esse comando dá dump
   ls_variant-report    = sy-repid.
 
   PERFORM f_remove_alv_buttons.
@@ -173,10 +174,10 @@ ENDMODULE.
 FORM f_build_grid_a.
 
   PERFORM f_build_fieldcat USING:
-      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ' '  ' ' CHANGING lt_fieldcata[],
-      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ' '  ' ' CHANGING lt_fieldcata[],
-      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ' '  ' ' CHANGING lt_fieldcata[],
-      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X'  ' ' CHANGING lt_fieldcata[].
+      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ' '  ' '  'C100' CHANGING lt_fieldcata[],
+      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ' '  ' '  ' '    CHANGING lt_fieldcata[],
+      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ' '  ' '  ' '    CHANGING lt_fieldcata[],
+      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X'  ' '  ' '    CHANGING lt_fieldcata[].
 
   IF lo_grid_100a IS INITIAL.
 
@@ -207,12 +208,12 @@ ENDFORM.
 FORM f_build_grid_b.
 
   PERFORM f_build_fieldcat USING:
-      'ID'                'ID'                'ICON'            'Status'            ' '  'X' CHANGING lt_fieldcatb[],
-      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  ' ' CHANGING lt_fieldcatb[],
-      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  ' ' CHANGING lt_fieldcatb[],
-      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  ' ' CHANGING lt_fieldcatb[],
-      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  ' ' CHANGING lt_fieldcatb[],
-      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  ' ' CHANGING lt_fieldcatb[].
+      'ID'                'ID'                'ICON'            'Status'            ' '  'X'  ' ' CHANGING lt_fieldcatb[],
+      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  ' '  ' ' CHANGING lt_fieldcatb[],
+      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  ' '  ' ' CHANGING lt_fieldcatb[],
+      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  ' '  ' ' CHANGING lt_fieldcatb[],
+      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  ' '  ' ' CHANGING lt_fieldcatb[],
+      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  ' '  ' ' CHANGING lt_fieldcatb[].
 
   IF lo_grid_100b IS INITIAL.
 
@@ -310,6 +311,7 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
                             VALUE(p_coltext)   TYPE c
                             VALUE(p_checkbox)  TYPE c
                             VALUE(p_icon)      TYPE c
+                            VALUE(p_emphasize) TYPE c
                          CHANGING t_fieldcat   TYPE lvc_t_fcat.
 
   DATA: ls_fieldcat LIKE LINE OF t_fieldcat[].
@@ -319,6 +321,7 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
   ls_fieldcat-coltext   = p_coltext.
   ls_fieldcat-checkbox  = p_checkbox.
   ls_fieldcat-icon  = p_icon.
+  ls_fieldcat-emphasize  = p_emphasize.
   APPEND ls_fieldcat TO t_fieldcat[].
 
 ENDFORM.
