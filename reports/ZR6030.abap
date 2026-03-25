@@ -18,7 +18,12 @@ TYPES:
     INCLUDE TYPE z6030aula_alun.
 TYPES: id    TYPE icon-id,
     color TYPE char4,
-  END OF ly_alun.
+  END OF ly_alun,
+
+  BEGIN OF ly_curso.
+    INCLUDE TYPE z6030aula_curso.
+TYPES: celltab TYPE lvc_t_styl, " Tabela do tipo sorted table
+  END OF ly_curso.
 
 " Selection-Screen: contorno na variável de entrada
 SELECTION-SCREEN BEGIN OF BLOCK b11 WITH FRAME TITLE TEXT-001." Parâmetro de entrada
@@ -29,37 +34,57 @@ SELECTION-SCREEN BEGIN OF BLOCK b11 WITH FRAME TITLE TEXT-001." Parâmetro de en
 SELECTION-SCREEN END OF BLOCK b11.
 
 * Tabelas internas
-DATA: lt_zt6030_curso   TYPE TABLE OF z6030aula_curso,
-      lt_zt6030_alun    TYPE TABLE OF ly_alun,
+DATA: lt_zt6030_curso      TYPE TABLE OF z6030aula_curso,
+      lt_zt6030_curso_negr TYPE TABLE OF ly_curso,
+      lt_zt6030_alun       TYPE TABLE OF ly_alun,
 
 * Declaração de variáveis
-      lo_grid_100a      TYPE REF TO cl_gui_alv_grid,
-      lo_grid_100b      TYPE REF TO cl_gui_alv_grid,
-      lo_container_100a TYPE REF TO cl_gui_custom_container,
-      lo_container_100b TYPE REF TO cl_gui_custom_container,
-      lv_okcode_100     TYPE sy-ucomm,
-      lt_fieldcata      TYPE lvc_t_fcat,
-      lt_fieldcatb      TYPE lvc_t_fcat,
-      lt_tool_bar       TYPE ui_functions,
-      ls_layout         TYPE lvc_s_layo,
-      ls_variant        TYPE disvariant.
+      lo_grid_100a         TYPE REF TO cl_gui_alv_grid,
+      lo_grid_100b         TYPE REF TO cl_gui_alv_grid,
+      lo_container_100a    TYPE REF TO cl_gui_custom_container,
+      lo_container_100b    TYPE REF TO cl_gui_custom_container,
+      lv_okcode_100        TYPE sy-ucomm,
+      lt_fieldcata         TYPE lvc_t_fcat,
+      lt_fieldcatb         TYPE lvc_t_fcat,
+      lt_tool_bar          TYPE ui_functions,
+      ls_layout            TYPE lvc_s_layo,
+      ls_variant           TYPE disvariant.
 
 START-OF-SELECTION.
   PERFORM f_obtem_dados.
 
 * Form
 FORM f_obtem_dados.
+  " Criando work areas
+  DATA: ls_zt6030_curso_negr LIKE LINE OF lt_zt6030_curso_negr[],
+        ls_celltab           LIKE LINE OF ls_zt6030_curso_negr-celltab[].
 
   SELECT *
     FROM z6030aula_curso
     INTO TABLE lt_zt6030_curso[]
     WHERE nome_curso IN so_curso[].
 
-
   SELECT *
     FROM z6030aula_alun
     INTO TABLE lt_zt6030_alun[]
     WHERE nome_curso IN so_curso[].
+
+  LOOP AT lt_zt6030_curso[] ASSIGNING FIELD-SYMBOL(<fs_curso>).
+    FREE: ls_zt6030_curso_negr-celltab[].
+    MOVE-CORRESPONDING <fs_curso> TO ls_zt6030_curso_negr.
+
+    IF ls_zt6030_curso_negr-ativo EQ 'X'.
+      ls_celltab-fieldname = 'DT_INICIO'.
+      ls_celltab-style     = '00000121'.
+      INSERT ls_celltab INTO TABLE ls_zt6030_curso_negr-celltab[]. " Utiliza-se INSERT por ser uma SORTED TABLE
+
+      ls_celltab-fieldname = 'DT_FIM'.
+      ls_celltab-style     = '00000121'.
+      INSERT ls_celltab INTO TABLE ls_zt6030_curso_negr-celltab[]. " Utiliza-se INSERT por ser uma SORTED TABLE
+    ENDIF.
+
+    APPEND ls_zt6030_curso_negr TO lt_zt6030_curso_negr[].
+  ENDLOOP.
 
   " Percorre para adicionar os ícones
   LOOP AT lt_zt6030_alun[] ASSIGNING FIELD-SYMBOL(<fs_alun>).
@@ -162,6 +187,7 @@ MODULE m_show_grid_100 OUTPUT.
   ls_layout-cwidth_opt = 'X'.
   ls_layout-zebra      = 'X'.
   ls_layout-info_fname = 'COLOR'.
+  ls_layout-stylefname = 'CELLTAB'.
 *  ls_layout-ctab_fname = 'COLOR_CELL'. " Esse comando dá dump
   ls_variant-report    = sy-repid.
 
@@ -195,7 +221,7 @@ FORM f_build_grid_a.
       i_save               = 'A'
     CHANGING
       it_fieldcatalog      = lt_fieldcata[]
-      it_outtab            = lt_zt6030_curso[]
+      it_outtab            = lt_zt6030_curso_negr[]
    ).
     lo_grid_100a->set_gridtitle( 'Lista de Cursos'). " Adiciona um título em cima da tabela
   ELSE.
