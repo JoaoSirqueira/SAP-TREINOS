@@ -25,6 +25,18 @@ TYPES: id    TYPE icon-id,
 TYPES: celltab TYPE lvc_t_styl, " Tabela do tipo sorted table
   END OF ly_curso.
 
+CLASS lcl_event_grid DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      data_changed
+        FOR EVENT data_changed
+          OF cl_gui_alv_grid IMPORTING er_data_changed
+                                       e_onf4
+                                       e_onf4_before
+                                       e_onf4_after
+                                       e_ucomm.
+ENDCLASS.
+
 " Selection-Screen: contorno na variável de entrada
 SELECTION-SCREEN BEGIN OF BLOCK b11 WITH FRAME TITLE TEXT-001." Parâmetro de entrada
 * Parâmetro
@@ -43,12 +55,26 @@ DATA: lt_zt6030_curso      TYPE TABLE OF z6030aula_curso,
       lo_grid_100b         TYPE REF TO cl_gui_alv_grid,
       lo_container_100a    TYPE REF TO cl_gui_custom_container,
       lo_container_100b    TYPE REF TO cl_gui_custom_container,
+      lo_event_grid        TYPE REF TO lcl_event_grid,
       lv_okcode_100        TYPE sy-ucomm,
       lt_fieldcata         TYPE lvc_t_fcat,
       lt_fieldcatb         TYPE lvc_t_fcat,
       lt_tool_bar          TYPE ui_functions,
       ls_layout            TYPE lvc_s_layo,
       ls_variant           TYPE disvariant.
+
+CLASS lcl_event_grid IMPLEMENTATION.
+  METHOD data_changed.
+    LOOP AT er_data_changed->mt_good_cells[] ASSIGNING FIELD-SYMBOL(<fs_good_cells>).
+      READ TABLE lt_zt6030_alun[] ASSIGNING FIELD-SYMBOL(<fs_alun>) INDEX <fs_good_cells>-row_id.
+      CASE <fs_good_cells>-fieldname.
+        WHEN 'VALOR'.
+          <fs_alun>-valor = <fs_good_cells>-value.
+      ENDCASE.
+    ENDLOOP.
+  ENDMETHOD.
+ENDCLASS.
+
 
 START-OF-SELECTION.
   PERFORM f_obtem_dados.
@@ -184,7 +210,7 @@ MODULE m_show_grid_100 OUTPUT.
 
   FREE: lt_fieldcata[].
 
-  ls_layout-cwidth_opt = 'X'.
+*  ls_layout-cwidth_opt = 'X'.
   ls_layout-zebra      = 'X'.
   ls_layout-info_fname = 'COLOR'.
   ls_layout-stylefname = 'CELLTAB'.
@@ -200,10 +226,10 @@ ENDMODULE.
 FORM f_build_grid_a.
 
   PERFORM f_build_fieldcat USING:
-      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ' '  ' '  'C100' CHANGING lt_fieldcata[],
-      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ' '  ' '  ' '    CHANGING lt_fieldcata[],
-      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ' '  ' '  ' '    CHANGING lt_fieldcata[],
-      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X'  ' '  ' '    CHANGING lt_fieldcata[].
+      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ' '  ' '  'C100' ' '  15  CHANGING lt_fieldcata[],
+      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ' '  ' '  ' '    ' '  10  CHANGING lt_fieldcata[],
+      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ' '  ' '  ' '    ' '  10  CHANGING lt_fieldcata[],
+      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X'  ' '  ' '    ' '  06  CHANGING lt_fieldcata[].
 
   IF lo_grid_100a IS INITIAL.
 
@@ -234,20 +260,27 @@ ENDFORM.
 FORM f_build_grid_b.
 
   PERFORM f_build_fieldcat USING:
-      'ID'                'ID'                'ICON'            'Status'            ' '  'X'  ' ' CHANGING lt_fieldcatb[],
-      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  ' '  ' ' CHANGING lt_fieldcatb[],
-      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  ' '  ' ' CHANGING lt_fieldcatb[],
-      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  ' '  ' ' CHANGING lt_fieldcatb[],
-      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  ' '  ' ' CHANGING lt_fieldcatb[],
-      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  ' '  ' ' CHANGING lt_fieldcatb[].
+      'ID'                'ID'                'ICON'            'Status'            ' '  'X'  ' '  ' '  06  CHANGING lt_fieldcatb[],
+      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  ' '  ' '  ' '  15  CHANGING lt_fieldcatb[],
+      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'VALOR'             'VALOR'             'z6030aula_alun'  'Valor'             ' '  ' '  ' '  'X'  10  CHANGING lt_fieldcatb[].
 
   IF lo_grid_100b IS INITIAL.
 
     lo_container_100b = NEW cl_gui_custom_container( container_name = 'CONTAINERB' ).
     lo_grid_100b      = NEW cl_gui_alv_grid( i_parent = lo_container_100b ).
+    lo_event_grid     = NEW lcl_event_grid( ).
 
     " Permite seleção múltipla de linhas
     lo_grid_100b->set_ready_for_input( 1 ).
+
+    " Permite alteração da célula
+    lo_grid_100b->register_edit_event(
+      i_event_id = cl_gui_alv_grid=>mc_evt_modified
+    ).
 
     lo_grid_100b->set_table_for_first_display(
     EXPORTING
@@ -260,6 +293,8 @@ FORM f_build_grid_b.
       it_outtab            = lt_zt6030_alun[]
    ).
     lo_grid_100b->set_gridtitle( 'Lista de alunos'). " Adiciona um título em cima da tabela
+
+    SET HANDLER lo_event_grid->data_changed FOR lo_grid_100b.
   ELSE.
     lo_grid_100b->refresh_table_display( ).
   ENDIF.
@@ -338,6 +373,8 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
                             VALUE(p_checkbox)  TYPE c
                             VALUE(p_icon)      TYPE c
                             VALUE(p_emphasize) TYPE c
+                            VALUE(p_edit)      TYPE c
+                            VALUE(p_outputlen) TYPE i
                          CHANGING t_fieldcat   TYPE lvc_t_fcat.
 
   DATA: ls_fieldcat LIKE LINE OF t_fieldcat[].
@@ -346,8 +383,10 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
   ls_fieldcat-ref_table = p_table.
   ls_fieldcat-coltext   = p_coltext.
   ls_fieldcat-checkbox  = p_checkbox.
-  ls_fieldcat-icon  = p_icon.
-  ls_fieldcat-emphasize  = p_emphasize.
+  ls_fieldcat-icon      = p_icon.
+  ls_fieldcat-emphasize = p_emphasize.
+  ls_fieldcat-edit      = p_edit.
+  ls_fieldcat-outputlen = p_outputlen.
   APPEND ls_fieldcat TO t_fieldcat[].
 
 ENDFORM.
