@@ -61,7 +61,8 @@ DATA: lt_zt6030_curso      TYPE TABLE OF z6030aula_curso,
       lt_fieldcatb         TYPE lvc_t_fcat,
       lt_tool_bar          TYPE ui_functions,
       ls_layout            TYPE lvc_s_layo,
-      ls_variant           TYPE disvariant.
+      ls_variant           TYPE disvariant,
+      lv_salvou_item       TYPE char1.
 
 CLASS lcl_event_grid IMPLEMENTATION.
   METHOD data_changed.
@@ -84,6 +85,9 @@ FORM f_obtem_dados.
   " Criando work areas
   DATA: ls_zt6030_curso_negr LIKE LINE OF lt_zt6030_curso_negr[],
         ls_celltab           LIKE LINE OF ls_zt6030_curso_negr-celltab[].
+
+  FREE: lt_zt6030_curso_negr[],
+        lt_zt6030_alun[].
 
   SELECT *
     FROM z6030aula_curso
@@ -137,7 +141,12 @@ ENDFORM.
 FORM f_visualizar_dados_alv_compl.
 
   IF lt_zt6030_curso[] IS NOT INITIAL OR lt_zt6030_alun[] IS NOT INITIAL.
-    CALL SCREEN 100.
+    IF lv_salvou_item EQ 'X'.
+      lo_grid_100a->refresh_table_display( ). " Atualiza página
+      lo_grid_100b->refresh_table_display( ). " Atualiza página
+    ELSE.
+      CALL SCREEN 100.
+    ENDIF.
   ELSE.
     MESSAGE 'Dados não localizados!' TYPE 'S' DISPLAY LIKE 'W'.
   ENDIF.
@@ -171,6 +180,19 @@ FORM f_visualizar_dados_alv_basico.
 
 ENDFORM.
 
+FORM f_salvar_alteracoes.
+  MODIFY z6030aula_alun FROM TABLE lt_zt6030_alun[].
+  IF sy-subrc EQ 0.
+    COMMIT WORK.
+    lv_salvou_item = 'X'.
+    PERFORM f_obtem_dados.
+    MESSAGE 'Dados salvos com sucesso!' TYPE 'S'.
+  ELSE.
+    ROLLBACK WORK.
+    MESSAGE 'Erro ao salvar dados!' TYPE 'S' DISPLAY LIKE 'E'.
+  ENDIF.
+ENDFORM.
+
 
 *&---------------------------------------------------------------------*
 *&      Module  USER_COMMAND_0100  INPUT
@@ -182,8 +204,12 @@ MODULE user_command_0100 INPUT.
   CASE lv_okcode_100.
     WHEN 'BACK'.
       LEAVE TO SCREEN 0.
+      CLEAR: lv_salvou_item.
     WHEN 'EXIT'.
       LEAVE PROGRAM.
+      CLEAR: lv_salvou_item.
+    WHEN 'SAVE' OR 'SALVAR'.
+      PERFORM f_salvar_alteracoes.
 
   ENDCASE.
 
@@ -208,7 +234,8 @@ ENDMODULE.
 *&---------------------------------------------------------------------*
 MODULE m_show_grid_100 OUTPUT.
 
-  FREE: lt_fieldcata[].
+  FREE: lt_fieldcata[],
+        lt_fieldcatb[].
 
 *  ls_layout-cwidth_opt = 'X'.
   ls_layout-zebra      = 'X'.
@@ -251,6 +278,12 @@ FORM f_build_grid_a.
    ).
     lo_grid_100a->set_gridtitle( 'Lista de Cursos'). " Adiciona um título em cima da tabela
   ELSE.
+    " Força atualização do fieldcat
+    lo_grid_100a->set_frontend_fieldcatalog(
+      EXPORTING
+        it_fieldcatalog = lt_fieldcata[]
+    ).
+
     lo_grid_100a->refresh_table_display( ).
   ENDIF.
 
@@ -296,6 +329,12 @@ FORM f_build_grid_b.
 
     SET HANDLER lo_event_grid->data_changed FOR lo_grid_100b.
   ELSE.
+    " Força atualização do fieldcat
+    lo_grid_100b->set_frontend_fieldcatalog(
+      EXPORTING
+        it_fieldcatalog = lt_fieldcatb[]
+    ).
+
     lo_grid_100b->refresh_table_display( ).
   ENDIF.
 
