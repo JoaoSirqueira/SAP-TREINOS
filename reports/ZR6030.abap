@@ -10,7 +10,7 @@ INCLUDE <icon>.
 TYPE-POOLS: slis. " É tipodiretório com estruturas salvas.
 
 * Declarando tabela para o select-options
-TABLES: z6030aula_curso.
+TABLES: z6030aula_curso, z6030aula_prof.
 
 * Tipos
 TYPES:
@@ -34,7 +34,12 @@ CLASS lcl_event_grid DEFINITION.
                                        e_onf4
                                        e_onf4_before
                                        e_onf4_after
-                                       e_ucomm.
+                                       e_ucomm,
+  hotspot_click
+    FOR EVENT hotspot_click
+          OF cl_gui_alv_grid IMPORTING e_row_id
+                                       e_column_id
+                                       es_row_no.
 ENDCLASS.
 
 " Selection-Screen: contorno na variável de entrada
@@ -49,18 +54,24 @@ SELECTION-SCREEN END OF BLOCK b11.
 DATA: lt_zt6030_curso      TYPE TABLE OF z6030aula_curso,
       lt_zt6030_curso_negr TYPE TABLE OF ly_curso,
       lt_zt6030_alun       TYPE TABLE OF ly_alun,
+      lt_zt6030_profe      TYPE TABLE OF z6030aula_prof,
 
 * Declaração de variáveis
       lo_grid_100a         TYPE REF TO cl_gui_alv_grid,
       lo_grid_100b         TYPE REF TO cl_gui_alv_grid,
+      lo_grid_200          TYPE REF TO cl_gui_alv_grid,
       lo_container_100a    TYPE REF TO cl_gui_custom_container,
       lo_container_100b    TYPE REF TO cl_gui_custom_container,
+      lo_container_200     TYPE REF TO cl_gui_custom_container,
       lo_event_grid        TYPE REF TO lcl_event_grid,
       lv_okcode_100        TYPE sy-ucomm,
+      lv_okcode_200        TYPE sy-ucomm,
       lt_fieldcata         TYPE lvc_t_fcat,
       lt_fieldcatb         TYPE lvc_t_fcat,
+      lt_fieldcat200       TYPE lvc_t_fcat,
       lt_tool_bar          TYPE ui_functions,
       ls_layout            TYPE lvc_s_layo,
+      ls_layout_200        TYPE lvc_s_layo,
       ls_variant           TYPE disvariant,
       lv_salvou_item       TYPE char1.
 
@@ -74,6 +85,23 @@ CLASS lcl_event_grid IMPLEMENTATION.
       ENDCASE.
     ENDLOOP.
   ENDMETHOD.
+
+  METHOD hotspot_click.
+
+    READ TABLE lt_zt6030_curso_negr[] ASSIGNING FIELD-SYMBOL(<fs_curso_negr>) INDEX e_row_id-index.
+
+    SELECT *
+      INTO TABLE lt_zt6030_profe[]
+      FROM z6030aula_prof
+      WHERE nome_curso EQ <fs_curso_negr>-nome_curso.
+
+    IF sy-subrc EQ 0.
+      CALL SCREEN 200 STARTING AT 45 5 ENDING AT 145 20. " Criação do pop-up
+    ELSE.
+      MESSAGE 'Dados não localizados' TYPE 'S' DISPLAY LIKE 'W'.
+    ENDIF.
+  ENDMETHOD.
+
 ENDCLASS.
 
 
@@ -253,15 +281,16 @@ ENDMODULE.
 FORM f_build_grid_a.
 
   PERFORM f_build_fieldcat USING:
-      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ' '  ' '  'C100' ' '  15  CHANGING lt_fieldcata[],
-      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ' '  ' '  ' '    ' '  10  CHANGING lt_fieldcata[],
-      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ' '  ' '  ' '    ' '  10  CHANGING lt_fieldcata[],
-      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X'  ' '  ' '    ' '  06  CHANGING lt_fieldcata[].
+      'NOME_CURSO'  'NOME_CURSO' 'z6030aula_curso'  'Curso'       ' '  ' '  'C100' ' '  'X'  15  CHANGING lt_fieldcata[],
+      'DT_INICIO'   'DT_INICIO'  'z6030aula_curso'  'Dt. Início'  ' '  ' '  ' '    ' '  ' '  10  CHANGING lt_fieldcata[],
+      'DT_FIM'      'DT_FIM'     'z6030aula_curso'  'Dt. Fim'     ' '  ' '  ' '    ' '  ' '  10  CHANGING lt_fieldcata[],
+      'ATIVO'       'ATIVO'      'z6030aula_curso'  'Ativo'       'X'  ' '  ' '    ' '  ' '  06  CHANGING lt_fieldcata[].
 
   IF lo_grid_100a IS INITIAL.
 
     lo_container_100a = NEW cl_gui_custom_container( container_name = 'CONTAINERA' ).
     lo_grid_100a      = NEW cl_gui_alv_grid( i_parent = lo_container_100a ).
+    lo_event_grid     = NEW lcl_event_grid( ).
 
     " Permite seleção múltipla de linhas
     lo_grid_100a->set_ready_for_input( 1 ).
@@ -277,6 +306,8 @@ FORM f_build_grid_a.
       it_outtab            = lt_zt6030_curso_negr[]
    ).
     lo_grid_100a->set_gridtitle( 'Lista de Cursos'). " Adiciona um título em cima da tabela
+    SET HANDLER lo_event_grid->hotspot_click FOR lo_grid_100a.
+
   ELSE.
     " Força atualização do fieldcat
     lo_grid_100a->set_frontend_fieldcatalog(
@@ -293,13 +324,13 @@ ENDFORM.
 FORM f_build_grid_b.
 
   PERFORM f_build_fieldcat USING:
-      'ID'                'ID'                'ICON'            'Status'            ' '  'X'  ' '  ' '  06  CHANGING lt_fieldcatb[],
-      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
-      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  ' '  ' '  ' '  15  CHANGING lt_fieldcatb[],
-      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
-      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
-      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
-      'VALOR'             'VALOR'             'z6030aula_alun'  'Valor'             ' '  ' '  ' '  'X'  10  CHANGING lt_fieldcatb[].
+      'ID'                'ID'                'ICON'            'Status'            ' '  'X'  ' '  ' '  ' '  06  CHANGING lt_fieldcatb[],
+      'NOME_CURSO'        'NOME_CURSO'        'z6030aula_alun'  'Curso'             ' '  ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'NOME_ALUNO'        'NOME_ALUNO'        'z6030aula_alun'  'Aluno'             ' '  ' '  ' '  ' '  ' '  15  CHANGING lt_fieldcatb[],
+      'DT_NASCIMENTO'     'DT_NASCIMENTO'     'z6030aula_alun'  'Dt.Nascimento'     ' '  ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'INSCR_CONFIRMADA'  'INSCR_CONFIRMADA'  'z6030aula_alun'  'Insc.Confirmada'   'X'  ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'PGTO_CONFIRMADO'   'PGTO_CONFIRMADO'   'z6030aula_alun'  'Pgto.Confirmado'   'X'  ' '  ' '  ' '  ' '  10  CHANGING lt_fieldcatb[],
+      'VALOR'             'VALOR'             'z6030aula_alun'  'Valor'             ' '  ' '  ' '  'X'  ' '  10  CHANGING lt_fieldcatb[].
 
   IF lo_grid_100b IS INITIAL.
 
@@ -413,6 +444,7 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
                             VALUE(p_icon)      TYPE c
                             VALUE(p_emphasize) TYPE c
                             VALUE(p_edit)      TYPE c
+                            VALUE(p_hotspot)   TYPE c
                             VALUE(p_outputlen) TYPE i
                          CHANGING t_fieldcat   TYPE lvc_t_fcat.
 
@@ -425,7 +457,72 @@ FORM f_build_fieldcat USING VALUE(p_fieldname) TYPE c
   ls_fieldcat-icon      = p_icon.
   ls_fieldcat-emphasize = p_emphasize.
   ls_fieldcat-edit      = p_edit.
+  ls_fieldcat-hotspot   = p_hotspot.
   ls_fieldcat-outputlen = p_outputlen.
   APPEND ls_fieldcat TO t_fieldcat[].
 
 ENDFORM.
+
+
+*&---------------------------------------------------------------------*
+*& Module STATUS_0200 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+  SET PF-STATUS 'STATUS200'.
+  SET TITLEBAR 'TITLE200'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+  CASE lv_okcode_200.
+    WHEN 'CANCEL'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+
+ENDMODULE.
+
+
+*&---------------------------------------------------------------------*
+*& Module M_SHOWGRID_200 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE m_show_grid_200 OUTPUT.
+
+  FREE: lt_fieldcat200[].
+
+  ls_layout_200-zebra      = 'X'.
+  ls_layout_200-cwidth_opt = 'X'.
+
+  PERFORM f_build_fieldcat USING:
+    'NOME_PROFE'  'NOME_PROFE' 'z6030aula_prof'  'Professor' ' '  ' '  ' ' ' '  ' '  00  CHANGING lt_fieldcat200[].
+
+  IF lo_grid_200 IS INITIAL.
+    lo_container_200 = NEW cl_gui_custom_container( container_name = 'CONTAINER200' ).
+    lo_grid_200      = NEW cl_gui_alv_grid( i_parent = lo_container_200 ).
+
+    " Permite seleção múltipla de linhas
+    lo_grid_200->set_ready_for_input( 1 ).
+
+    lo_grid_200->set_table_for_first_display(
+    EXPORTING
+      it_toolbar_excluding = lt_tool_bar[]
+      is_variant           = ls_variant
+      is_layout            = ls_layout
+      i_save               = 'A'
+    CHANGING
+      it_fieldcatalog      = lt_fieldcat200[]
+      it_outtab            = lt_zt6030_profe[]
+   ).
+    lo_grid_200->set_gridtitle( 'Lista de Professores'). " Adiciona um título em cima da tabela
+  ELSE.
+    lo_grid_200->refresh_table_display( ).
+  ENDIF.
+
+ENDMODULE.
