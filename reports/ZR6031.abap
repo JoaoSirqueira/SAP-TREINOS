@@ -74,14 +74,18 @@ FORM f_seleciona_dados.
       ON scarr~carrid = sflight~carrid
     INNER JOIN spfli
       ON spfli~carrid = sflight~carrid
-     AND spfli~connid = sflight~connid.
+     AND spfli~connid = sflight~connid
+    WHERE sflight~carrid IN s_carrid
+    AND sflight~fldate IN s_fldate.
 
   IF gt_voos IS NOT INITIAL.
 
-    LOOP AT gt_voos INTO gs_voo.
-      gs_voo-assentos_livres = gs_voo-seatsmax - gs_voo-seatsocc.
-      gs_voo-ocupacao        = ( gs_voo-seatsocc / gs_voo-seatsmax ) * 100.
-      MODIFY gt_voos FROM gs_voo.
+    LOOP AT gt_voos ASSIGNING FIELD-SYMBOL(<fs_voo>).
+*      gs_voo-assentos_livres = gs_voo-seatsmax - gs_voo-seatsocc.
+*      gs_voo-ocupacao        = ( gs_voo-seatsocc / gs_voo-seatsmax ) * 100.
+
+      <fs_voo>-assentos_livres = <fs_voo>-seatsmax - <fs_voo>-seatsocc.
+      <fs_voo>-ocupacao        = ( <fs_voo>-seatsocc / <fs_voo>-seatsmax ) * 100.
 
     ENDLOOP.
 
